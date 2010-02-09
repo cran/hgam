@@ -1,0 +1,10 @@
+export(hgam, hrisk)
+export(dgp)
+
+S3method(print, hgam)
+S3method(coef, hgam)
+S3method(fitted, hgam)
+S3method(predict, hgam)
+S3method(logLik, hgam)
+S3method(plot, hgam)
+S3method(plot, hrisk)
