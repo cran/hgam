@@ -122,98 +122,115 @@ predict.hgam <- function(object, newdata = NULL, which = NULL,
 plot.hgam <- function(x, which = NULL, newdata = NULL, 
                       rug = TRUE, multidim = FALSE, ...) {
   
-  object <- x
+   object <- x
   
+   cf <- coef(object)
   
-  if (is.null(which)) {
-      which <- sort(unique(attr(object$Btilde, "assign")[abs(cf) > 0]))
-      which <- which[which != 0]
-  }
+   if (is.null(which)) {
+       which <- sort(unique(attr(object$Btilde, "assign")[abs(cf) > 0]))
+       which <- which[which != 0]
+   }
   
-  if (multidim && length(which) == 2) {
-    
-  cf <- coef(object)
+   if (is.null(newdata)) {        
+       x <- object$x
+   } else {
+       x <- newdata
+   }
+  
+   #go into the persp-section if and only if two (!) covariates are selcted to be drown in three-dimensional plot.
+   if (multidim && length(which) == 2) {      
+  
+       #using the two covariates...
+       x1 <- x[[which[1]]]
+       x2 <- x[[which[2]]]
 
-  if (is.null(newdata)) {
-      x <- object$x
-  } else {
-      x <- newdata
-  }
-  args <- list(...)
-  args$xlab <- x$name
-  xlab <- args$xlab
+       #...to build up...
+       x1 <- seq(from = min(x1), to = max(x1), length = 100)
+       x2 <- seq(from = min(x2), to = max(x2), length = 100)
 
-  x1 <- x[[which[1]]]
-  x2 <- x[[which[2]]]
+       #...a grid with...
+       nd <- expand.grid(x1, x2)
+       names(nd) <- colnames(x[, which])
+       
+       #...the predicted effects...
+       pred <- predict(object, which = which, newdata = nd)
+       
+       #...collected in a matrix.
+       z <- matrix(pred, nrow = length(x1), ncol = length(x2))
 
-  x1 <- seq(from = min(x1), to = max(x1), length = 100)
-  x2 <- seq(from = min(x2), to = max(x2), length = 100)
-
-  nd <- expand.grid(x1, x2)
-  names(nd) <- colnames(x[, which])
-  pred <- predict(object, which = which, newdata = nd)
-  z <- matrix(pred, nrow = length(x1), ncol = length(x2))
-
-#  if (is.null(args$ylim))
-#      args$ylim <- range(sapply(tmp, function(x) range(x$f)))
-  if (is.null(args$zlab))
-      args$zlab <- "Marginal effect"
-#  if (is.null(args$type))
-#      args$type <- "l"
-
-      args$theta = 30
-      args$phi = 30
-      args$expand = 0.5
-      args$ticktype = "detailed"
-
-      args$x <- x1
-      args$y <- x2
-      args$z <- z
-      args$xlab <- names(x)[which[1]]
-      args$ylab <- names(x)[which[2]]
+       #sets up a list which is to be filled with necessary elements and to be comittet to the persp-function
+       args <- list(...)
+       
+       #the needed ellements are put together, so they fit to 'persp()'
+       args$x <- x1
+       args$y <- x2
+       args$z <- z
+       
+       #if not given, use default parameters for an adequate plot
+       if (is.null(args$theta)){
+           args$theta <- 30
+       }
+       
+       if (is.null(args$phi)){
+           args$phi <- 30
+       }
+       
+       if (is.null(args$expand)){
+           args$expand <- 0.5
+       }
+       
+       if (is.null(args$ticktype)){
+           args$ticktype <- "detailed"
+       }                             
+       
+       #if no name for the x-lab is given, use the name of the x1-variable
+       if (is.null(args$xlab)){ 
+           args$xlab <- names(x)[which[1]]
+       }
+       
+       #if no name for the y-lab is given, use the name of the x2-variable
+       if (is.null(args$ylab)){ 
+           args$ylab <- names(x)[which[2]]
+       }
+       
+       #if no lable for the z-lab is given, use 'Marginal effects'     
+       if (is.null(args$zlab)){
+           args$zlab <- "Marginal effects"
+       }   
+       
       
-      do.call("persp", args)
-      #if (rug) rug(i$x)
-
-  invisible(NULL)
+       do.call("persp", args)
+       
+       invisible(NULL)
   
-  }
-  else{
-  cf <- coef(object)
-  if (is.null(which)) {
-      which <- sort(unique(attr(object$Btilde, "assign")[abs(cf) > 0]))
-      which <- which[which != 0]
-  }
-  if (is.null(newdata)) {
-      x <- object$x
-  } else {
-      x <- newdata
-  }
-  args <- list(...)
-  xlab <- args$xlab
-  tmp <- lapply(which, function(w) {
-      xw <- x[, w, drop = TRUE]
-      ox <- order(xw)
-      fw <- predict(object, which = w, newdata = x)
-      list(x = xw[ox], f = fw[ox], name = 
-           ifelse(is.null(xlab), names(x)[w], xlab[w]), w = w)
-  })
+   } else {
 
-  if (is.null(args$ylim)) 
-      args$ylim <- range(sapply(tmp, function(x) range(x$f)))
-  if (is.null(args$ylab)) 
-      args$ylab <- "Marginal effect"
-  if (is.null(args$type)) 
-      args$type <- "l"
-  lapply(tmp, function(x) {
-      args$x <- x$x
-      args$y <- x$f
-      args$xlab <- x$name
-      do.call("plot", args)
-      if (rug) rug(x$x)
-  })
-  invisible(NULL)
-  }
+
+       args <- list(...)
+       xlab <- args$xlab
+       tmp <- lapply(which, function(w) {
+           xw <- x[, w, drop = TRUE]
+           ox <- order(xw)
+           fw <- predict(object, which = w, newdata = x)
+           list(x = xw[ox], f = fw[ox], name = 
+               ifelse(is.null(xlab), names(x)[w], xlab[w]), w = w)
+       })
+
+       if (is.null(args$ylim)) 
+           args$ylim <- range(sapply(tmp, function(x) range(x$f)))
+       if (is.null(args$ylab)) 
+           args$ylab <- "Marginal effect"
+       if (is.null(args$type)) 
+           args$type <- "l"
+       lapply(tmp, function(x) {
+           args$x <- x$x
+           args$y <- x$f
+           args$xlab <- x$name
+           do.call("plot", args)
+           if (rug) rug(x$x)
+       })
+       invisible(NULL)
+   }
 }
 
 
@@ -260,3 +277,6 @@ print.hrisk <- function(h, ...) {
     cat("\n")
     invisible(h)
 }
+
+
+#plot(mod, multidim = T, zlab = "test2", col = "lightblue", theta=20)

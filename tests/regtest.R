@@ -26,7 +26,7 @@ dfplot <- dgp(100, sd = sd)
 
 mod <- hgam(y ~ ., data = dftrain, lambda2 = 5, lambda1 = 1)
 sd(dftest$y - sin(dftest$x1) - 2 * dftest$x2)
-sd(dftest$y - predict(mod, newdata = dftest))
+sd(dftest$y - as.numeric(predict(mod, newdata = dftest)))
 
 layout(matrix(1:3, nr = 1))
 plot(dfplot$x1, predict(mod, newdata = dfplot, which = "x1"))
